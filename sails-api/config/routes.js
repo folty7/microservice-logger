@@ -33,5 +33,7 @@ module.exports.routes = {
   *                                                                          *
   ***************************************************************************/
 
-
+  'GET /api/health': 'api/health',
+  'POST /logs': 'logs/create',
+  'GET /logs': 'logs/find',
 };

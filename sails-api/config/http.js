@@ -29,16 +29,17 @@ module.exports.http = {
     *                                                                          *
     ***************************************************************************/
 
-    // order: [
-    //   'cookieParser',
-    //   'session',
-    //   'bodyParser',
-    //   'compress',
-    //   'poweredBy',
-    //   'router',
-    //   'www',
-    //   'favicon',
-    // ],
+    order: [
+      //   'cookieParser',
+      //   'session',
+      'bodyParser',
+      //   'compress',
+      //   'poweredBy',
+      //   'router',
+      //   'www',
+      //   'favicon',
+      'requestsLogger'
+    ],
 
 
     /***************************************************************************
@@ -49,11 +50,15 @@ module.exports.http = {
     *                                                                          *
     ***************************************************************************/
 
-    // bodyParser: (function _configureBodyParser(){
-    //   var skipper = require('skipper');
-    //   var middlewareFn = skipper({ strict: true });
-    //   return middlewareFn;
-    // })(),
+    bodyParser: (function _configureBodyParser() {
+      var skipper = require('skipper');
+      var middlewareFn = skipper({ strict: true });
+      return middlewareFn;
+    })(),
+
+    requestsLogger: (function _configureBodyParser() {
+      return require('../api/middlewares/requests-logger.js');
+    })(),
 
   },
 

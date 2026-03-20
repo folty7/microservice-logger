@@ -1,0 +1,11 @@
+services:
+  sails-api:
+    build: sails-api
+    command: npm run dev
+    volumes:
+      - ./sails-api:/app
+    environment:
+      PORT: 8080
+      NODE_ENV: development
+    ports:
+      - 8080:8080
