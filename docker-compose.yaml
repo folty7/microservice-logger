@@ -21,6 +21,7 @@ services:
       - 8081:8081
     depends_on:
       - mongo
+    restart: always
   mongo:
     image: mongo:8.0.10
     ports:
@@ -29,5 +30,6 @@ services:
     image: mongo-express:1.0.0-alpha
     depends_on:
       - mongo
+    restart: always
     ports:
       - 8088:8081

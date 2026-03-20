@@ -1,3 +1,5 @@
 export const services = app => {
-  // All services will be registered here
+  app.get('/test', (req, res) => {
+    res.send({})
+  });
 }
