@@ -9,3 +9,25 @@ services:
       NODE_ENV: development
     ports:
       - 8080:8080
+  feathers-logs-service:
+    build: feathers-logs-service
+    command: npm run dev
+    volumes:
+      - ./feathers-logs-service:/app
+    environment:
+      PORT: 8081
+      NODE_ENV: development
+    ports:
+      - 8081:8081
+    depends_on:
+      - mongo
+  mongo:
+    image: mongo:8.0.10
+    ports:
+      - 27017:27017
+  mongo-express:
+    image: mongo-express:1.0.0-alpha
+    depends_on:
+      - mongo
+    ports:
+      - 8088:8081
