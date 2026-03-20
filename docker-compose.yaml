@@ -17,6 +17,7 @@ services:
     environment:
       PORT: 8081
       NODE_ENV: development
+      MONGODB: mongodb://mongo:27017/feathers-logs-service
     ports:
       - 8081:8081
     depends_on:

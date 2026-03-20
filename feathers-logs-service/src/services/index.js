@@ -1,5 +1,5 @@
+import { logs } from './logs/logs.js'
+
 export const services = app => {
-  app.get('/test', (req, res) => {
-    res.send({})
-  });
+  app.configure(logs)
 }
