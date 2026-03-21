@@ -3,18 +3,16 @@
 import { hooks as schemaHooks } from '@feathersjs/schema'
 import {
   logsDataValidator,
-  logsPatchValidator,
   logsQueryValidator,
   logsResolver,
   logsExternalResolver,
   logsDataResolver,
-  logsPatchResolver,
   logsQueryResolver
 } from './logs.schema.js'
 import { LogsService, getOptions } from './logs.class.js'
 
 export const logsPath = 'logs'
-export const logsMethods = ['find', 'get', 'create', 'patch', 'remove']
+export const logsMethods = ['find', 'create']
 
 export * from './logs.class.js'
 export * from './logs.schema.js'
@@ -36,10 +34,7 @@ export const logs = app => {
     before: {
       all: [schemaHooks.validateQuery(logsQueryValidator), schemaHooks.resolveQuery(logsQueryResolver)],
       find: [],
-      get: [],
-      create: [schemaHooks.validateData(logsDataValidator), schemaHooks.resolveData(logsDataResolver)],
-      patch: [schemaHooks.validateData(logsPatchValidator), schemaHooks.resolveData(logsPatchResolver)],
-      remove: []
+      create: [schemaHooks.validateData(logsDataValidator), schemaHooks.resolveData(logsDataResolver)]
     },
     after: {
       all: []
