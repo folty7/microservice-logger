@@ -1,9 +1,9 @@
 const axios = require('axios');
 
-module.exports = function forwardRequest(request) {
+module.exports = function forwardRequest(url, request) {
   return axios({
     method: request.method,
-    url: `http://feathers-logs-service:8081${request.path}`,
+    url: `${url}${request.path}`,
     data: request.body,
     params: request.query,
     headers: {
