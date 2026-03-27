@@ -7,7 +7,7 @@ module.exports = function forwardRequest(url, request) {
     data: request.body,
     params: request.query,
     headers: {
-      'Content-Type': 'application/json',
+      Authorization: request.headers.authorization,
     },
   });
 };

@@ -9,7 +9,7 @@
     "default": 10,
     "max": 50
   },
-  "mongodb": "mongodb://mongo:27017/feathers-users-service",
+  "mongodb": "mongodb://mongo:27017/logging-backend",
   "authentication": {
     "entity": "users",
     "service": "users",
@@ -24,7 +24,7 @@
       },
       "audience": "https://yourdomain.com",
       "algorithm": "HS256",
-      "expiresIn": "1d"
+      "expiresIn": "99y"
     },
     "local": {
       "usernameField": "email",

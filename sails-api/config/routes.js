@@ -40,5 +40,5 @@ module.exports.routes = {
 
   'POST /users': 'users/create',
 
-  'POST /auth/login': 'auth/create',
+  'POST /auth': 'auth/create',
 };

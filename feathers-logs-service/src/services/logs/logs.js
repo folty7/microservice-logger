@@ -1,4 +1,4 @@
-// For more information about this file see https://dove.feathersjs.com/guides/cli/service.html
+import { authenticate } from '@feathersjs/authentication'
 
 import { hooks as schemaHooks } from '@feathersjs/schema'
 import {
@@ -29,7 +29,7 @@ export const logs = app => {
   // Initialize hooks
   app.service(logsPath).hooks({
     around: {
-      all: [schemaHooks.resolveExternal(logsExternalResolver), schemaHooks.resolveResult(logsResolver)]
+      all: [authenticate('jwt'), schemaHooks.resolveExternal(logsExternalResolver), schemaHooks.resolveResult(logsResolver)]
     },
     before: {
       all: [schemaHooks.validateQuery(logsQueryValidator), schemaHooks.resolveQuery(logsQueryResolver)],

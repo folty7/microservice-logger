@@ -1,5 +1,6 @@
 /**
  * Utility function to redact sensitive fields from an object.
+ * TODO: check for other sensitive fields in current version of the app
  */
 function maskSensitiveData(obj) {
   if (!obj || typeof obj !== 'object') {

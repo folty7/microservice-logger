@@ -9,5 +9,20 @@
     "default": 10,
     "max": 50
   },
-  "mongodb": "mongodb://mongo:27017/feathers-logs-service"
+  "mongodb": "mongodb://mongo:27017/logging-backend",
+  "authentication": {
+    "entity": null,
+    "secret": "7Kodrz7BatDm6+mPH7e8tE6CL7hLckUX",
+    "authStrategies": [
+      "jwt"
+    ],
+    "jwtOptions": {
+      "header": {
+        "typ": "access"
+      },
+      "audience": "https://yourdomain.com",
+      "algorithm": "HS256",
+      "expiresIn": "99y"
+    }
+  }
 }
