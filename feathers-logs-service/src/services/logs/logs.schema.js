@@ -12,10 +12,10 @@ export const logsSchema = {
   properties: {
     _id: ObjectIdSchema(),
     text: { type: 'string' },
-    level: {
+    level: {    // standard syslog levels, https://en.wikipedia.org/wiki/Syslog#Message_components
       type: 'integer',
-      minimum: 1,
-      maximum: 9
+      minimum: 0,
+      maximum: 7
     },
     timeStamp: { type: 'string' },
     type: { enum: ['system', 'user'] },

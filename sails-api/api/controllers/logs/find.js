@@ -1,4 +1,10 @@
+const forwardRequest = require('../../utils/forward-request.js');
+
 module.exports = async function find(req, res) {
-  sails.log.debug('TODO: implement');
-  return res.status(501).send();
+  if (req.query.type !== 'system') {
+    return res.status(400).send('Bad request');
+  }
+
+  const response = await forwardRequest(req);
+  return res.status(response.status).send(response.data);
 };

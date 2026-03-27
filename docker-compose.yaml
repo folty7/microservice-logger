@@ -18,8 +18,18 @@ services:
       PORT: 8081
       NODE_ENV: development
       MONGODB: mongodb://mongo:27017/feathers-logs-service
-    ports:
-      - 8081:8081
+    depends_on:
+      - mongo
+    restart: always
+  feathers-users-service:
+    build: feathers-users-service
+    command: npm run dev
+    volumes:
+      - ./feathers-users-service:/app
+    environment:
+      PORT: 8082
+      NODE_ENV: development
+      MONGODB: mongodb://mongo:27017/feathers-users-service
     depends_on:
       - mongo
     restart: always
