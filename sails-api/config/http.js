@@ -35,10 +35,11 @@ module.exports.http = {
       'bodyParser',
       //   'compress',
       //   'poweredBy',
-      //   'router',
+      'router',
       //   'www',
       //   'favicon',
-      'requestsLogger'
+      'requestsLogger',
+      'errorHandler'
     ],
 
 
@@ -58,6 +59,10 @@ module.exports.http = {
 
     requestsLogger: (function _configureBodyParser() {
       return require('../api/middlewares/requests-logger.js');
+    })(),
+
+    errorHandler: (function _configureErrorHandler() {
+      return require('../api/middlewares/error-handler.js');
     })(),
 
   },

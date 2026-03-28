@@ -1,24 +1,12 @@
-/**
- * Utility function to redact sensitive fields from an object.
- * TODO: check for other sensitive fields in current version of the app
- */
-function maskSensitiveData(obj) {
-  if (!obj || typeof obj !== 'object') {
-    return obj;
-  }
+const MaskData = require('maskdata');
 
-  const SENSITIVE_KEYS = ['password', 'token', 'secret', 'authorization', 'apiKey', 'creditCard'];
-  const masked = Array.isArray(obj) ? [...obj] : { ...obj };
-
-  for (const key in masked) {
-    if (SENSITIVE_KEYS.includes(key)) {
-      masked[key] = '***REDACTED***';
-    } else if (typeof masked[key] === 'object') {
-      masked[key] = maskSensitiveData(masked[key]);
-    }
-  }
-  return masked;
-}
+const maskOptions = {
+  maskWith: '***REDACTED***',
+  fields: [
+    'password', 'token', 'secret', 'authorization', 'apiKey', 'creditCard',
+    'accessToken', 'refreshToken', 'jwt', 'cookie', 'Authorization'
+  ]
+};
 
 module.exports = async function requestsLogger(req, res, next) {
   const start = Date.now();
@@ -27,7 +15,7 @@ module.exports = async function requestsLogger(req, res, next) {
     const duration = Date.now() - start;
 
     // Use the masker to hide sensitive info from the body
-    const safeBody = maskSensitiveData(req.body);
+    const safeBody = (req.body && typeof req.body === 'object') ? MaskData.maskJSONFields(req.body, maskOptions) : req.body;
 
     // If you ever need to log the full unmasked body for local debugging,
     // you can swap 'safeBody' for 'req.body' below (use with caution!)
