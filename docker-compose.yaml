@@ -1,4 +1,12 @@
 services:
+  react-frontend:
+    build: react-frontend
+    restart: always
+    volumes:
+      - ./react-frontend:/app
+      - /app/node_modules # prevent local node_modules from overriding container's
+    ports:
+      - 5173:5173
   sails-api:
     build: sails-api
     restart: always
@@ -8,6 +16,8 @@ services:
     environment:
       PORT: 8080
       NODE_ENV: development
+      FEATHERS_LOGS_URL: ${FEATHERS_LOGS_URL}
+      FEATHERS_USERS_URL: ${FEATHERS_USERS_URL}
     ports:
       - 8080:8080
   feathers-logs-service:
@@ -18,7 +28,8 @@ services:
     environment:
       PORT: 8081
       NODE_ENV: development
-      MONGODB: mongodb://mongo:27017/feathers-logs-service
+      MONGODB: ${MONGODB_URL}
+      FEATHERS_SECRET: ${APP_JWT_SECRET}
     depends_on:
       - mongo
     restart: always
@@ -30,7 +41,8 @@ services:
     environment:
       PORT: 8082
       NODE_ENV: development
-      MONGODB: mongodb://mongo:27017/feathers-users-service
+      MONGODB: ${MONGODB_URL}
+      FEATHERS_SECRET: ${APP_JWT_SECRET}
     depends_on:
       - mongo
     restart: always

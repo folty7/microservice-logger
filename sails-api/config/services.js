@@ -1,8 +1,8 @@
 module.exports.services = {
   logs: {
-    url: 'http://feathers-logs-service:8081'
+    url: process.env.FEATHERS_LOGS_URL
   },
   users: {
-    url: 'http://feathers-users-service:8082'
+    url: process.env.FEATHERS_USERS_URL
   },
 };
