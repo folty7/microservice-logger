@@ -1,40 +1,105 @@
-# feathers-logs-service
+# Feathers Logs Service
 
-> 
+JWT-protected log persistence microservice for the logging platform. It exposes a small Feathers service for creating and querying structured log entries stored in MongoDB.
 
-## About
+## Responsibilities
 
-This project uses [Feathers](http://feathersjs.com). An open source framework for building APIs and real-time applications.
+- Persist log records in the `logs` MongoDB collection.
+- Validate log payloads with Feathers JSON schemas.
+- Enforce JWT authentication on all external log operations.
+- Support Feathers query syntax for filtering, pagination, and sorting.
+- Provide a REST API consumed through the Sails API gateway.
 
-## Getting Started
+## Stack
 
-1. Make sure you have [NodeJS](https://nodejs.org/) and [npm](https://www.npmjs.com/) installed.
-2. Install your dependencies
+- Node.js ESM
+- FeathersJS 5
+- Feathers Express
+- Feathers REST
+- Feathers authentication with JWT strategy
+- Feathers schema validation/resolvers
+- MongoDB via `@feathersjs/mongodb`
+- Winston logging
+- Mocha test runner
 
-    ```
-    cd path/to/feathers-logs-service
-    npm install
-    ```
+## Exposed Services
 
-3. Start your app
+### `auth`
 
-    ```
-    npm start
-    ```
+- Registered by `src/authentication.js`.
+- Supports JWT validation only.
+- Uses the shared `FEATHERS_SECRET` so access tokens issued by the users service can authorize log requests.
 
-## Testing
+### `logs`
 
-Run `npm test` and all your tests in the `test/` directory will be run.
+Registered at path `logs`.
 
-## Scaffolding
+| Method | Auth required | Notes |
+| --- | --- | --- |
+| `find` | yes | Lists logs with Feathers query syntax |
+| `create` | yes | Validates and stores a log entry |
 
-This app comes with a powerful command line interface for Feathers. Here are a few things it can do:
+## Log Schema
 
+```json
+{
+  "_id": "ObjectId",
+  "text": "string",
+  "level": 0,
+  "timeStamp": "string",
+  "type": "system"
+}
 ```
-$ npx feathers help                           # Show all commands
-$ npx feathers generate service               # Generate a new Service
+
+Schema rules:
+
+- `text`, `level`, `timeStamp`, and `type` are required.
+- `level` is an integer from `0` to `7`, matching the syslog severity range.
+- `type` must be either `system` or `user`.
+- `additionalProperties` is disabled.
+
+## Configuration
+
+Default configuration is in `config/default.json`. Docker Compose overrides these values through environment variables.
+
+| Variable | Purpose |
+| --- | --- |
+| `PORT` | Service port inside the container; Compose sets `8081` |
+| `HOSTNAME` | Host binding override |
+| `MONGODB` | MongoDB connection string |
+| `FEATHERS_SECRET` | JWT verification secret shared with the users service |
+
+The default MongoDB database path is parsed from the connection URL and used to initialize the Feathers MongoDB client.
+
+## Development
+
+```bash
+npm install
+npm run dev
 ```
 
-## Help
+Other scripts:
 
-For more information on all the things you can do with Feathers visit [docs.feathersjs.com](http://docs.feathersjs.com).
+```bash
+npm start
+npm test
+npm run mocha
+npm run prettier
+```
+
+## Docker
+
+The service is built from `node:22-alpine`, installs dependencies with `npm ci`, and starts with `npm start` by default. In Docker Compose development mode it runs:
+
+```bash
+npm run dev
+```
+
+## Tests
+
+Tests live in `test/` and currently cover:
+
+- Application startup.
+- Static index response.
+- JSON 404 handling.
+- `logs` service registration.
