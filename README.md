@@ -38,26 +38,33 @@ The Sails gateway exposes the routes below. In local frontend development, Vite 
 | Method | Path | Target service | Notes |
 | --- | --- | --- | --- |
 | `GET` | `/api/health` | Sails API | Returns gateway health response on the gateway itself |
-| `POST` | `/auth` | users service | Local auth; returns Feathers access token |
-| `POST` | `/users` | users service | Creates a user |
-| `GET` | `/logs` | logs service | Lists logs; requires JWT |
-| `POST` | `/logs` | logs service | Creates a log entry; requires JWT |
+| `POST` | `/auth` | users service | Local auth; returns an access token valid for 1 day. Rate limited |
+| `POST` | `/users` | users service | Registers a regular user (email + password, min. 8 characters). Rate limited |
+| `GET` | `/logs` | logs service | Lists logs (users: own logs only, admins: all); requires JWT |
+| `POST` | `/logs` | logs service | Creates a log entry (`system` type: admins only); requires JWT |
 
 ## Data Models
 
 ### User
 
 - `_id`: MongoDB ObjectId
-- `email`: string
-- `password`: string, hashed before persistence and removed from external responses
+- `email`: string, valid email address, unique and stored lowercase
+- `password`: string (8-128 characters), hashed before persistence and removed from external responses
+- `role`: `admin` or `user`. Set by the server: registration always creates `user`; the account from `ADMIN_EMAIL` / `ADMIN_PASSWORD` is created or promoted to `admin` when the users service starts
 
 ### Log
 
 - `_id`: MongoDB ObjectId
 - `text`: string
 - `level`: integer from `0` to `7`, matching syslog severity range
-- `timeStamp`: string
-- `type`: `system` or `user`
+- `timeStamp`: string, event time reported by the client
+- `type`: `system` (admins only) or `user`
+- `userId`: string, set by the server from the access token
+- `createdAt`: ISO 8601 date-time, set by the server when the log is received
+
+### Authorization
+
+The users service puts the user's `role` into the access token, and the logs service authorizes on it. Admins can read all logs and write `system` logs. Regular users only read their own logs and can only write `user` logs. Role changes take effect at the next login, because tokens carry the role for up to 1 day.
 
 ## Environment
 
@@ -73,6 +80,7 @@ openssl rand -hex 32
 | `MONGO_ROOT_USERNAME` / `MONGO_ROOT_PASSWORD` | MongoDB root account, used only by mongo-express |
 | `MONGO_APP_DATABASE` / `MONGO_APP_USERNAME` / `MONGO_APP_PASSWORD` | Least-privileged account the services use (`readWrite` on the app database) |
 | `MONGO_EXPRESS_USERNAME` / `MONGO_EXPRESS_PASSWORD` | Basic auth for mongo-express |
+| `ADMIN_EMAIL` / `ADMIN_PASSWORD` | Optional first admin account, created or promoted on users-service startup |
 | `FEATHERS_LOGS_URL` / `FEATHERS_USERS_URL` | Internal service URLs used by the gateway |
 
 The same JWT secret must be shared by both Feathers services so tokens issued by the users service can authorize requests against the logs service. The services refuse to start without a secret of at least 32 characters, and access tokens expire after 1 day.
