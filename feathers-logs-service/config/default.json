@@ -12,7 +12,6 @@
   "mongodb": "mongodb://mongo:27017/logging-backend",
   "authentication": {
     "entity": null,
-    "secret": "7Kodrz7BatDm6+mPH7e8tE6CL7hLckUX",
     "authStrategies": [
       "jwt"
     ],
@@ -20,9 +19,9 @@
       "header": {
         "typ": "access"
       },
-      "audience": "https://yourdomain.com",
+      "audience": "logging-backend",
       "algorithm": "HS256",
-      "expiresIn": "99y"
+      "expiresIn": "1d"
     }
   }
 }

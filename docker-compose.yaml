@@ -28,8 +28,8 @@ services:
     environment:
       PORT: 8081
       NODE_ENV: development
-      MONGODB: ${MONGODB_URL}
-      FEATHERS_SECRET: ${APP_JWT_SECRET}
+      MONGODB: mongodb://${MONGO_APP_USERNAME:?set MONGO_APP_USERNAME in .env}:${MONGO_APP_PASSWORD:?set MONGO_APP_PASSWORD in .env}@mongo:27017/${MONGO_APP_DATABASE:?set MONGO_APP_DATABASE in .env}
+      FEATHERS_SECRET: ${APP_JWT_SECRET:?set APP_JWT_SECRET in .env}
     depends_on:
       - mongo
     restart: always
@@ -41,7 +41,7 @@ services:
     environment:
       PORT: 8082
       NODE_ENV: development
-      MONGODB: ${MONGODB_URL}
+      MONGODB: mongodb://${MONGO_APP_USERNAME}:${MONGO_APP_PASSWORD}@mongo:27017/${MONGO_APP_DATABASE}
       FEATHERS_SECRET: ${APP_JWT_SECRET}
     depends_on:
       - mongo
@@ -49,12 +49,34 @@ services:
   mongo:
     image: mongo:8.0.10
     restart: always
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: ${MONGO_ROOT_USERNAME:?set MONGO_ROOT_USERNAME in .env}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_ROOT_PASSWORD:?set MONGO_ROOT_PASSWORD in .env}
+      # Read by mongo/init scripts to create the least-privileged application user
+      MONGO_APP_DATABASE: ${MONGO_APP_DATABASE}
+      MONGO_APP_USERNAME: ${MONGO_APP_USERNAME}
+      MONGO_APP_PASSWORD: ${MONGO_APP_PASSWORD}
+    volumes:
+      - mongo-data:/data/db
+      - ./mongo/init:/docker-entrypoint-initdb.d:ro
+    # Reachable only from this machine (e.g. MongoDB Compass), never from the network
     ports:
-      - 27017:27017
+      - 127.0.0.1:27017:27017
   mongo-express:
     image: mongo-express:1.0.0-alpha
+    # Debug tool only: start with `docker compose --profile debug up`
+    profiles:
+      - debug
     depends_on:
       - mongo
     restart: always
+    environment:
+      ME_CONFIG_MONGODB_URL: mongodb://${MONGO_ROOT_USERNAME}:${MONGO_ROOT_PASSWORD}@mongo:27017/?authSource=admin
+      ME_CONFIG_BASICAUTH: "true"
+      ME_CONFIG_BASICAUTH_USERNAME: ${MONGO_EXPRESS_USERNAME:?set MONGO_EXPRESS_USERNAME in .env}
+      ME_CONFIG_BASICAUTH_PASSWORD: ${MONGO_EXPRESS_PASSWORD:?set MONGO_EXPRESS_PASSWORD in .env}
     ports:
-      - 8088:8081
+      - 127.0.0.1:8088:8081
+
+volumes:
+  mongo-data:
