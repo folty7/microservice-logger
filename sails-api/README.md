@@ -17,8 +17,7 @@ Public HTTP gateway for the logging platform. This Sails.js service exposes the 
 - Sails.js 1.5
 - Axios
 - Skipper body parser
-- `maskdata` for request-body field masking
-- `fast-redact` dependency available for structured redaction use cases
+- Built-in recursive redaction of sensitive request-body fields
 
 ## Routes
 
@@ -56,10 +55,23 @@ Downstream service URLs are configured in `config/services.js`:
 Configured in `config/http.js`.
 
 - `bodyParser` uses Skipper with strict parsing.
-- `requestsLogger` records method, URL, status, duration, IP, user agent, query, and masked body.
+- `requestsLogger` runs before the router, so every request is logged: method, URL, status, duration and IP at `info` level, the masked body only at `debug` level (production logs at `info`, so bodies are never written there).
 - `errorHandler` returns normalized JSON error responses.
 
-Masked request body fields include:
+Upstream errors (4xx/5xx) from the Feathers services are relayed unchanged. Requests time out after 10 s; a timeout returns `504`, an unreachable service `502`.
+
+## Rate limiting
+
+Policies in `api/policies/` (mapped in `config/policies.js`), in-memory per gateway process and keyed by client IP:
+
+| Route | Limit |
+| --- | --- |
+| `POST /auth` | 10 failed logins per 15 minutes (successful logins are not counted) |
+| `POST /users` | 10 sign-ups per hour |
+
+Exceeding a limit returns `429` with a `Retry-After` header. Behind a proxy that does not forward a trusted client IP (such as the Vite dev proxy), all clients share one bucket.
+
+Masked request body fields (matched case-insensitively at any nesting level) include:
 
 - `password`
 - `token`
@@ -71,7 +83,6 @@ Masked request body fields include:
 - `refreshToken`
 - `jwt`
 - `cookie`
-- `Authorization`
 
 ## Development
 
@@ -102,4 +113,4 @@ Compose exposes the gateway on host port `8080`.
 
 - The gateway does not persist data directly.
 - Authentication is delegated to the users service.
-- Log authorization is enforced by the logs service through JWT validation.
+- Log authorization (ownership and roles) is enforced by the logs service using the JWT payload.

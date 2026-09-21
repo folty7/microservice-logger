@@ -33,12 +33,13 @@ module.exports.http = {
       //   'cookieParser',
       //   'session',
       'bodyParser',
+      // Must run before 'router': requests the router handles never reach later middleware.
+      'requestsLogger',
       //   'compress',
       //   'poweredBy',
       'router',
       //   'www',
       //   'favicon',
-      'requestsLogger',
       'errorHandler'
     ],
 
@@ -57,7 +58,7 @@ module.exports.http = {
       return middlewareFn;
     })(),
 
-    requestsLogger: (function _configureBodyParser() {
+    requestsLogger: (function _configureRequestsLogger() {
       return require('../api/middlewares/requests-logger.js');
     })(),
 

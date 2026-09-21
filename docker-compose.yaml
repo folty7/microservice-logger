@@ -43,6 +43,9 @@ services:
       NODE_ENV: development
       MONGODB: mongodb://${MONGO_APP_USERNAME}:${MONGO_APP_PASSWORD}@mongo:27017/${MONGO_APP_DATABASE}
       FEATHERS_SECRET: ${APP_JWT_SECRET}
+      # Optional: creates/promotes this account to admin on startup
+      ADMIN_EMAIL: ${ADMIN_EMAIL:-}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:-}
     depends_on:
       - mongo
     restart: always

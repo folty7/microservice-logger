@@ -307,7 +307,8 @@ module.exports = {
   *                                                                         *
   ***************************************************************************/
   log: {
-    level: 'debug'
+    // 'info' keeps request bodies (logged at debug level) out of production logs
+    level: 'info'
   },
 
 

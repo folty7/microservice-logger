@@ -19,4 +19,8 @@ module.exports.policies = {
 
   // '*': true,
 
+  // Brute-force and mass-signup protection (see api/policies/)
+  'auth/create': 'rate-limit-login',
+  'users/create': 'rate-limit-signup',
+
 };

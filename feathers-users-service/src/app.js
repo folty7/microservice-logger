@@ -18,6 +18,7 @@ import { mongodb } from './mongodb.js'
 import { authentication } from './authentication.js'
 import { services } from './services/index.js'
 import { channels } from './channels.js'
+import { seedAdmin } from './seed-admin.js'
 
 const app = express(feathers())
 
@@ -60,7 +61,7 @@ app.hooks({
 })
 // Register application setup and teardown hooks here
 app.hooks({
-  setup: [],
+  setup: [seedAdmin],
   teardown: []
 })
 

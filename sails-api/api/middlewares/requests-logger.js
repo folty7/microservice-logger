@@ -48,7 +48,11 @@ module.exports = async function requestsLogger(req, res, next) {
         body: safeBody
       };
 
-      sails.log.debug(`${logData.timestamp} ${logData.method} ${logData.url} ${logData.status} (${logData.duration}) - ${JSON.stringify(logData.body)}`);
+      sails.log.info(`${logData.timestamp} ${logData.method} ${logData.url} ${logData.status} (${logData.duration}) ${logData.ip}`);
+      // Bodies may contain personal data, so they are only logged at debug level (not in production)
+      if (logData.body !== undefined) {
+        sails.log.debug(`  body: ${JSON.stringify(logData.body)}`);
+      }
     } catch (err) {
       sails.log.error('requestsLogger failed:', err);
     }
