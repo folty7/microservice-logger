@@ -33,10 +33,17 @@ export default function Login() {
         })
       });
 
-      const data = await response.json();
-      
-      if (!response.ok) {
-        throw new Error(data.message || 'Chybné prihlasovacie údaje');
+      // Error responses may have no JSON body (e.g. from a proxy); don't surface parse errors
+      const data = await response.json().catch(() => ({}));
+
+      if (response.status === 401) {
+        throw new Error('Chybné prihlasovacie údaje');
+      }
+      if (response.status === 429) {
+        throw new Error('Príliš veľa neúspešných pokusov. Skúste to znova neskôr.');
+      }
+      if (!response.ok || !data.accessToken) {
+        throw new Error('Prihlásenie sa nepodarilo. Skúste to znova neskôr.');
       }
       
       login(data.accessToken);
@@ -63,7 +70,7 @@ export default function Login() {
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            {authError && <div className="p-3 bg-red-100 text-red-700 rounded-md text-sm">{authError}</div>}
+            {authError && <div role="alert" className="p-3 bg-red-100 text-red-700 rounded-md text-sm">{authError}</div>}
             
             <div className="space-y-2">
               <Label htmlFor="email">E-mail</Label>
