@@ -1,3 +1,6 @@
 {
-  "port": 8998
+  "port": 8998,
+  "authentication": {
+    "secret": "test-only-secret-do-not-use-in-any-real-environment"
+  }
 }

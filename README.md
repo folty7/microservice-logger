@@ -9,7 +9,7 @@ Multi-service logging application built with a React dashboard, a Sails API gate
 - `feathers-users-service` - FeathersJS user and authentication service backed by MongoDB.
 - `feathers-logs-service` - FeathersJS log ingestion/query service backed by MongoDB.
 - `mongo` - MongoDB database used by both Feathers services.
-- `mongo-express` - Optional database inspection UI.
+- `mongo-express` - Optional database inspection UI, started only with the `debug` Compose profile.
 
 ## Service Topology
 
@@ -19,8 +19,8 @@ Multi-service logging application built with a React dashboard, a Sails API gate
 | `sails-api` | `8080` | `8080` | Public API gateway |
 | `feathers-logs-service` | `8081` | internal | Logs service |
 | `feathers-users-service` | `8082` | internal | Users/auth service |
-| `mongo` | `27017` | `27017` | MongoDB |
-| `mongo-express` | `8081` | `8088` | MongoDB admin UI |
+| `mongo` | `27017` | `127.0.0.1:27017` | MongoDB (authentication enabled, localhost only) |
+| `mongo-express` | `8081` | `127.0.0.1:8088` | MongoDB admin UI (`debug` profile only) |
 
 ## Tech Stack
 
@@ -61,16 +61,23 @@ The Sails gateway exposes the routes below. In local frontend development, Vite 
 
 ## Environment
 
-Create `.env` from `.env.example` and provide values for:
+Create `.env` from `.env.example` and fill in every empty value. Generate each secret with:
 
-```dotenv
-APP_JWT_SECRET=replace_with_shared_jwt_secret
-MONGODB_URL=mongodb://mongo:27017/logging-backend
-FEATHERS_LOGS_URL=http://feathers-logs-service:8081
-FEATHERS_USERS_URL=http://feathers-users-service:8082
+```bash
+openssl rand -hex 32
 ```
 
-The same JWT secret must be shared by both Feathers services so tokens issued by the users service can authorize requests against the logs service.
+| Variable | Purpose |
+| --- | --- |
+| `APP_JWT_SECRET` | JWT signing secret shared by both Feathers services (min. 32 characters) |
+| `MONGO_ROOT_USERNAME` / `MONGO_ROOT_PASSWORD` | MongoDB root account, used only by mongo-express |
+| `MONGO_APP_DATABASE` / `MONGO_APP_USERNAME` / `MONGO_APP_PASSWORD` | Least-privileged account the services use (`readWrite` on the app database) |
+| `MONGO_EXPRESS_USERNAME` / `MONGO_EXPRESS_PASSWORD` | Basic auth for mongo-express |
+| `FEATHERS_LOGS_URL` / `FEATHERS_USERS_URL` | Internal service URLs used by the gateway |
+
+The same JWT secret must be shared by both Feathers services so tokens issued by the users service can authorize requests against the logs service. The services refuse to start without a secret of at least 32 characters, and access tokens expire after 1 day.
+
+Docker Compose builds the services' MongoDB connection string from the `MONGO_APP_*` values. The application user is created by `mongo/init/01-create-app-user.js` on the first start of an empty `mongo-data` volume. If you change the MongoDB credentials later, recreate the volume with `docker compose down -v` (this deletes the database).
 
 ## Running With Docker Compose
 
@@ -82,7 +89,12 @@ After startup:
 
 - Frontend: `http://localhost:5173`
 - API gateway: `http://localhost:8080`
-- Mongo Express: `http://localhost:8088`
+
+To also start Mongo Express (`http://localhost:8088`, basic auth from `.env`):
+
+```bash
+docker compose --profile debug up --build
+```
 
 ## Development Commands
 
