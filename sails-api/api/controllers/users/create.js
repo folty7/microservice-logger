@@ -1,10 +1,5 @@
-const forwardRequest = require('../../utils/forward-request.js');
+const { proxyTo } = require('../../utils/forward-request.js');
 
-module.exports = async function create(req, res) {
-  try {
-    const response = await forwardRequest(sails.config.services.users.url, req);
-    return res.status(response.status).send(response.data);
-  } catch (error) {
-    return res.status(error.status).send(error.data);
-  }
+module.exports = function create(req, res) {
+  return proxyTo('users', req, res);
 };
