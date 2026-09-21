@@ -15,13 +15,34 @@ const assertSecret = app => {
   }
 }
 
+// Puts the user's role into the access token so other services (logs) can authorize
+// without querying the users service. Accounts created before roles existed count as 'user'.
+class RoleAwareAuthenticationService extends AuthenticationService {
+  async getPayload(authResult, params) {
+    const payload = await super.getPayload(authResult, params)
+    // The entity is stored under the configured entity name ("users" in config/default.json)
+    const user = authResult[this.configuration.entity]
+
+    return user ? { ...payload, role: user.role || 'user' } : payload
+  }
+}
+
+// Emails are stored lowercase (see users.schema.js), so match logins case-insensitively too
+class EmailLocalStrategy extends LocalStrategy {
+  async authenticate(data, params) {
+    const email = typeof data.email === 'string' ? data.email.trim().toLowerCase() : data.email
+
+    return super.authenticate({ ...data, email }, params)
+  }
+}
+
 export const authentication = app => {
   assertSecret(app)
 
-  const authentication = new AuthenticationService(app)
+  const authentication = new RoleAwareAuthenticationService(app)
 
   authentication.register('jwt', new JWTStrategy())
-  authentication.register('local', new LocalStrategy())
+  authentication.register('local', new EmailLocalStrategy())
   authentication.register('github', new OAuthStrategy())
   authentication.register('google', new OAuthStrategy())
 
