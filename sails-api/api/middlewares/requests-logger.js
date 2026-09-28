@@ -1,3 +1,5 @@
+const { randomUUID } = require('crypto');
+
 const REDACTED = '***REDACTED***';
 const MAX_DEPTH = 10;
 
@@ -26,8 +28,12 @@ function redact(value, depth = 0) {
   return result;
 }
 
-module.exports = async function requestsLogger(req, res, next) {
+const requestsLogger = async function requestsLogger(req, res, next) {
   const start = Date.now();
+
+  // One id per request, forwarded to the services so their logs can be correlated
+  req.requestId = req.get('X-Request-Id') || randomUUID();
+  res.set('X-Request-Id', req.requestId);
 
   res.on('finish', () => {
     // This listener runs outside the request's error handling, so an exception
@@ -38,6 +44,7 @@ module.exports = async function requestsLogger(req, res, next) {
 
       const logData = {
         timestamp: new Date().toISOString(),
+        requestId: req.requestId,
         method: req.method,
         url: req.url,
         status: res.statusCode,
@@ -48,10 +55,10 @@ module.exports = async function requestsLogger(req, res, next) {
         body: safeBody
       };
 
-      sails.log.info(`${logData.timestamp} ${logData.method} ${logData.url} ${logData.status} (${logData.duration}) ${logData.ip}`);
+      sails.log.info(`${logData.timestamp} [${logData.requestId}] ${logData.method} ${logData.url} ${logData.status} (${logData.duration}) ${logData.ip}`);
       // Bodies may contain personal data, so they are only logged at debug level (not in production)
       if (logData.body !== undefined) {
-        sails.log.debug(`  body: ${JSON.stringify(logData.body)}`);
+        sails.log.debug(`  [${logData.requestId}] body: ${JSON.stringify(logData.body)}`);
       }
     } catch (err) {
       sails.log.error('requestsLogger failed:', err);
@@ -60,3 +67,7 @@ module.exports = async function requestsLogger(req, res, next) {
 
   next();
 };
+
+module.exports = requestsLogger;
+// Exported for tests
+module.exports.redact = redact;
