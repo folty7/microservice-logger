@@ -35,7 +35,12 @@ const ensureIndexes = app =>
   app
     .get('mongodbClient')
     .then(db =>
-      db.collection('logs').createIndexes([{ key: { userId: 1, createdAt: -1 } }, { key: { createdAt: -1 } }])
+      db.collection('logs').createIndexes([
+        { key: { userId: 1, createdAt: -1 } },
+        { key: { createdAt: -1 } },
+        // Retention: documents are removed once their expiresAt date passes
+        { key: { expiresAt: 1 }, expireAfterSeconds: 0 }
+      ])
     )
     .catch(error => logger.error(`Could not create indexes on logs: ${error.message}`))
 
