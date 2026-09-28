@@ -22,6 +22,21 @@ interface LogsPage {
 
 const PAGE_SIZE = 25;
 
+type TypeFilter = 'all' | 'system' | 'user';
+type LevelFilter = 'all' | '3' | '4';
+
+const LEVEL_FILTERS: { value: LevelFilter; label: string }[] = [
+  { value: 'all', label: 'Všetky úrovne' },
+  { value: '3', label: 'Chyby (0-3)' },
+  { value: '4', label: 'Varovania a horšie (0-4)' },
+];
+
+const TYPE_FILTERS: { value: TypeFilter; label: string }[] = [
+  { value: 'all', label: 'Všetky typy' },
+  { value: 'system', label: 'System' },
+  { value: 'user', label: 'User' },
+];
+
 // Syslog severities: lower number = more severe (0 Emergency ... 7 Debug)
 const LEVELS = ['Emergency', 'Alert', 'Critical', 'Error', 'Warning', 'Notice', 'Info', 'Debug'];
 
@@ -44,6 +59,8 @@ export default function Dashboard() {
   const [skip, setSkip] = useState(0);
   const [isLoadingLogs, setIsLoadingLogs] = useState(false);
   const [loadError, setLoadError] = useState('');
+  const [typeFilter, setTypeFilter] = useState<TypeFilter>('all');
+  const [levelFilter, setLevelFilter] = useState<LevelFilter>('all');
 
   const fetchLogs = useCallback(async () => {
     if (!token) return;
@@ -54,6 +71,13 @@ export default function Dashboard() {
         '$limit': String(PAGE_SIZE),
         '$skip': String(skip),
       });
+      if (typeFilter !== 'all') {
+        params.set('type', typeFilter);
+      }
+      if (levelFilter !== 'all') {
+        // Syslog: the lower the number, the more severe
+        params.set('level[$lte]', levelFilter);
+      }
       const response = await fetch(`/api/logs?${params}`, {
         headers: {
           'Authorization': `Bearer ${token}`
@@ -80,15 +104,45 @@ export default function Dashboard() {
     } finally {
       setIsLoadingLogs(false);
     }
-  }, [token, logout, skip]);
+  }, [token, logout, skip, typeFilter, levelFilter]);
+
+  // Filters and paging are applied server-side, so reset to the first page when they change
+  useEffect(() => {
+    setSkip(0);
+  }, [typeFilter, levelFilter]);
 
   // Load logs when token is available
   useEffect(() => {
     fetchLogs();
 
-    // Obnova každých 10 sekúnd pre "kvázi-live" pocit
-    const interval = setInterval(fetchLogs, 10000);
-    return () => clearInterval(interval);
+    // Obnova každých 10 sekúnd pre "kvázi-live" pocit, ale iba kým je karta viditeľná
+    let interval: number | undefined;
+    const startPolling = () => {
+      if (interval === undefined) {
+        interval = window.setInterval(fetchLogs, 10000);
+      }
+    };
+    const stopPolling = () => {
+      window.clearInterval(interval);
+      interval = undefined;
+    };
+    const handleVisibility = () => {
+      if (document.hidden) {
+        stopPolling();
+      } else {
+        fetchLogs();
+        startPolling();
+      }
+    };
+
+    if (!document.hidden) {
+      startPolling();
+    }
+    document.addEventListener('visibilitychange', handleVisibility);
+    return () => {
+      stopPolling();
+      document.removeEventListener('visibilitychange', handleVisibility);
+    };
   }, [fetchLogs]);
 
   const pageStart = total === 0 ? 0 : skip + 1;
@@ -108,16 +162,44 @@ export default function Dashboard() {
               <CardTitle>Záznamy systému</CardTitle>
               <CardDescription>Najnovšie logy ako prvé.</CardDescription>
             </div>
-            <Button variant="outline" size="sm" onClick={fetchLogs} disabled={isLoadingLogs}>
-              {isLoadingLogs ? "Načítavam..." : "Obnoviť"}
-            </Button>
+            <div className="flex items-center gap-2">
+              <label className="sr-only" htmlFor="type-filter">Filter podľa typu</label>
+              <select
+                id="type-filter"
+                className="h-8 rounded-md border border-slate-200 bg-white px-2 text-xs"
+                value={typeFilter}
+                onChange={(e) => setTypeFilter(e.target.value as TypeFilter)}
+              >
+                {TYPE_FILTERS.map((option) => (
+                  <option key={option.value} value={option.value}>{option.label}</option>
+                ))}
+              </select>
+              <label className="sr-only" htmlFor="level-filter">Filter podľa úrovne</label>
+              <select
+                id="level-filter"
+                className="h-8 rounded-md border border-slate-200 bg-white px-2 text-xs"
+                value={levelFilter}
+                onChange={(e) => setLevelFilter(e.target.value as LevelFilter)}
+              >
+                {LEVEL_FILTERS.map((option) => (
+                  <option key={option.value} value={option.value}>{option.label}</option>
+                ))}
+              </select>
+              <Button variant="outline" size="sm" onClick={fetchLogs} disabled={isLoadingLogs}>
+                {isLoadingLogs ? "Načítavam..." : "Obnoviť"}
+              </Button>
+            </div>
           </CardHeader>
           <CardContent>
             {loadError && (
               <div role="alert" className="mb-4 p-3 bg-red-100 text-red-700 rounded-md text-sm">{loadError}</div>
             )}
             {logs.length === 0 && !isLoadingLogs && !loadError ? (
-              <div className="text-center p-8 text-slate-500">Zatiaľ žiadne logy v databáze.</div>
+              <div className="text-center p-8 text-slate-500">
+                {typeFilter === 'all' && levelFilter === 'all'
+                  ? 'Zatiaľ žiadne logy v databáze.'
+                  : 'Filtru nezodpovedá žiadny log.'}
+              </div>
             ) : (
               <Table>
                 <TableHeader>

@@ -37,7 +37,8 @@ The Sails gateway exposes the routes below. In local frontend development, Vite 
 
 | Method | Path | Target service | Notes |
 | --- | --- | --- | --- |
-| `GET` | `/api/health` | Sails API | Returns gateway health response on the gateway itself |
+| `GET` | `/health` (also `/api/health`) | Sails API | Liveness of the gateway itself |
+| `GET` | `/ready` (also `/api/ready`) | Sails API | Readiness: `200` only while both Feathers services answer `/ready` |
 | `POST` | `/auth` | users service | Local auth; returns an access token valid for 1 day. Rate limited |
 | `POST` | `/users` | users service | Registers a regular user (email + password, min. 8 characters). Rate limited |
 | `GET` | `/logs` | logs service | Lists logs (users: own logs only, admins: all); requires JWT |
@@ -57,9 +58,10 @@ The Sails gateway exposes the routes below. In local frontend development, Vite 
 - `_id`: MongoDB ObjectId
 - `text`: string
 - `level`: integer from `0` to `7`, matching syslog severity range
-- `timeStamp`: string, event time reported by the client
+- `timeStamp`: optional ISO 8601 date-time, event time reported by the client; the server fills in the receive time when it is missing
 - `type`: `system` (admins only) or `user`
 - `userId`: string, set by the server from the access token
+- `expiresAt`: date-time, set by the server when `LOG_RETENTION_DAYS` is configured; a MongoDB TTL index deletes the log at that time
 - `createdAt`: ISO 8601 date-time, set by the server when the log is received
 
 ### Authorization
@@ -104,6 +106,24 @@ To also start Mongo Express (`http://localhost:8088`, basic auth from `.env`):
 docker compose --profile debug up --build
 ```
 
+## Running In Production Mode
+
+`docker-compose.prod.yaml` builds production images: no bind mounts, no dev servers, `NODE_ENV=production`, and only the frontend is published. The React app is built and served by nginx, which proxies `/api` to the gateway, so the API is same-origin and the gateway itself is not exposed.
+
+```bash
+docker compose -f docker-compose.prod.yaml up --build -d
+```
+
+The app is then on `http://localhost`. MongoDB is not published at all in this mode.
+
+## Health Checks
+
+Every service exposes `GET /health` (process is up) and `GET /ready` (dependencies answer). Compose uses them so that services wait for a healthy database, and the gateway waits for healthy services.
+
+## Log Retention
+
+`LOG_RETENTION_DAYS` (default `0` = keep forever) makes the logs service stamp `expiresAt` on new logs. A TTL index then removes them. Logs written before the setting was enabled are kept.
+
 ## Development Commands
 
 Each service can also be run directly from its own directory:
@@ -122,11 +142,16 @@ Service-specific commands and configuration details are documented in each servi
 
 ## Testing
 
-The Feathers services include Mocha tests for application startup, 404 behavior, and service registration:
+Every backend service has a test suite; `npm test` runs it.
 
 ```bash
-cd feathers-users-service && npm test
-cd feathers-logs-service && npm test
+cd feathers-users-service && npm test   # registration, duplicates, roles, login
+cd feathers-logs-service && npm test    # ownership, admin-only system logs, validation
+cd sails-api && npm test                # lint + redaction, rate limiting, proxy error mapping
 ```
 
-The Sails API currently has a placeholder `custom-tests` script. The React frontend currently exposes build and lint scripts, but no test suite is configured.
+The Feathers suites start a real in-memory MongoDB (`mongodb-memory-server`), so no database needs to be running. The Sails suite uses the built-in `node --test` runner.
+
+The React frontend has no test suite; `npm run lint` and `npm run build` cover it in CI.
+
+GitHub Actions (`.github/workflows/ci.yml`) runs all of the above on every pull request, plus `npm audit` (fails on high/critical advisories in runtime dependencies) and validation of both compose files.

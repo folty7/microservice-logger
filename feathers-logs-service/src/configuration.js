@@ -11,7 +11,8 @@ export const configurationSchema = {
     ...defaultAppSettings,
     host: { type: 'string' },
     port: { type: 'number' },
-    public: { type: 'string' }
+    public: { type: 'string' },
+    logRetentionDays: { type: 'number', minimum: 0 }
   }
 }
 

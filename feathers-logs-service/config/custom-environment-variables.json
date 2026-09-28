@@ -7,5 +7,9 @@
   "mongodb": "MONGODB",
   "authentication": {
     "secret": "FEATHERS_SECRET"
+  },
+  "logRetentionDays": {
+    "__name": "LOG_RETENTION_DAYS",
+    "__format": "number"
   }
 }

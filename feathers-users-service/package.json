@@ -11,7 +11,7 @@
   "contributors": [],
   "bugs": {},
   "engines": {
-    "node": ">= 25.8.0"
+    "node": ">=22"
   },
   "feathers": {
     "language": "js",
@@ -34,7 +34,7 @@
     "start": "node src",
     "dev": "node --watch src/",
     "prettier": "npx prettier \"**/*.js\" --write",
-    "mocha": "cross-env NODE_ENV=test mocha test/ --recursive --exit",
+    "mocha": "cross-env NODE_ENV=test mocha test/ --recursive --require ./test/setup.mjs --exit",
     "test": "npm run mocha",
     "bundle:client": "npm pack --pack-destination ./public"
   },
@@ -62,6 +62,7 @@
     "axios": "^1.13.6",
     "cross-env": "^10.1.0",
     "mocha": "^11.7.5",
+    "mongodb-memory-server": "^10.4.3",
     "nodemon": "^3.1.14",
     "prettier": "^3.8.1"
   }

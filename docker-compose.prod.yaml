@@ -1,43 +1,43 @@
+# Production-style stack: built images, no bind mounts, no dev servers, nothing but the
+# frontend published to the host. Run with:
+#   docker compose -f docker-compose.prod.yaml up --build -d
 services:
   react-frontend:
     build:
       context: react-frontend
-      target: dev
+      target: prod
     restart: always
-    volumes:
-      - ./react-frontend:/app
-      - /app/node_modules # prevent local node_modules from overriding container's
+    depends_on:
+      sails-api:
+        condition: service_healthy
+    # nginx serves the built assets and proxies /api to the gateway
     ports:
-      - 5173:5173
+      - 80:80
   sails-api:
     build: sails-api
     restart: always
-    command: npm run dev
-    volumes:
-      - ./sails-api:/app
-      - /app/node_modules # keep the container's dependencies, not the host's
     environment:
       PORT: 8080
-      NODE_ENV: development
-      FEATHERS_LOGS_URL: ${FEATHERS_LOGS_URL}
-      FEATHERS_USERS_URL: ${FEATHERS_USERS_URL}
+      NODE_ENV: production
+      FEATHERS_LOGS_URL: http://feathers-logs-service:8081
+      FEATHERS_USERS_URL: http://feathers-users-service:8082
     healthcheck:
       test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:8080/health').then(r => process.exit(r.ok ? 0 : 1)).catch(() => process.exit(1))"]
       interval: 15s
       timeout: 5s
       retries: 5
       start_period: 30s
-    ports:
-      - 8080:8080
+    depends_on:
+      feathers-logs-service:
+        condition: service_healthy
+      feathers-users-service:
+        condition: service_healthy
   feathers-logs-service:
     build: feathers-logs-service
-    command: npm run dev
-    volumes:
-      - ./feathers-logs-service:/app
-      - /app/node_modules # keep the container's dependencies, not the host's
+    restart: always
     environment:
       PORT: 8081
-      NODE_ENV: development
+      NODE_ENV: production
       MONGODB: mongodb://${MONGO_APP_USERNAME:?set MONGO_APP_USERNAME in .env}:${MONGO_APP_PASSWORD:?set MONGO_APP_PASSWORD in .env}@mongo:27017/${MONGO_APP_DATABASE:?set MONGO_APP_DATABASE in .env}
       FEATHERS_SECRET: ${APP_JWT_SECRET:?set APP_JWT_SECRET in .env}
       # Optional: delete logs older than this many days (0 or unset keeps them forever)
@@ -51,19 +51,14 @@ services:
     depends_on:
       mongo:
         condition: service_healthy
-    restart: always
   feathers-users-service:
     build: feathers-users-service
-    command: npm run dev
-    volumes:
-      - ./feathers-users-service:/app
-      - /app/node_modules # keep the container's dependencies, not the host's
+    restart: always
     environment:
       PORT: 8082
-      NODE_ENV: development
+      NODE_ENV: production
       MONGODB: mongodb://${MONGO_APP_USERNAME}:${MONGO_APP_PASSWORD}@mongo:27017/${MONGO_APP_DATABASE}
       FEATHERS_SECRET: ${APP_JWT_SECRET}
-      # Optional: creates/promotes this account to admin on startup
       ADMIN_EMAIL: ${ADMIN_EMAIL:-}
       ADMIN_PASSWORD: ${ADMIN_PASSWORD:-}
     healthcheck:
@@ -75,14 +70,12 @@ services:
     depends_on:
       mongo:
         condition: service_healthy
-    restart: always
   mongo:
     image: mongo:8.0.10
     restart: always
     environment:
       MONGO_INITDB_ROOT_USERNAME: ${MONGO_ROOT_USERNAME:?set MONGO_ROOT_USERNAME in .env}
       MONGO_INITDB_ROOT_PASSWORD: ${MONGO_ROOT_PASSWORD:?set MONGO_ROOT_PASSWORD in .env}
-      # Read by mongo/init scripts to create the least-privileged application user
       MONGO_APP_DATABASE: ${MONGO_APP_DATABASE}
       MONGO_APP_USERNAME: ${MONGO_APP_USERNAME}
       MONGO_APP_PASSWORD: ${MONGO_APP_PASSWORD}
@@ -95,24 +88,7 @@ services:
       timeout: 5s
       retries: 10
       start_period: 20s
-    # Reachable only from this machine (e.g. MongoDB Compass), never from the network
-    ports:
-      - 127.0.0.1:27017:27017
-  mongo-express:
-    image: mongo-express:1.0.0-alpha
-    # Debug tool only: start with `docker compose --profile debug up`
-    profiles:
-      - debug
-    depends_on:
-      - mongo
-    restart: always
-    environment:
-      ME_CONFIG_MONGODB_URL: mongodb://${MONGO_ROOT_USERNAME}:${MONGO_ROOT_PASSWORD}@mongo:27017/?authSource=admin
-      ME_CONFIG_BASICAUTH: "true"
-      ME_CONFIG_BASICAUTH_USERNAME: ${MONGO_EXPRESS_USERNAME:?set MONGO_EXPRESS_USERNAME in .env}
-      ME_CONFIG_BASICAUTH_PASSWORD: ${MONGO_EXPRESS_PASSWORD:?set MONGO_EXPRESS_PASSWORD in .env}
-    ports:
-      - 127.0.0.1:8088:8081
+    # Not published: the database is reachable only from the compose network
 
 volumes:
   mongo-data:

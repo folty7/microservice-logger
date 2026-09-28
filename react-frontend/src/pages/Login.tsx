@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
@@ -98,20 +98,9 @@ export default function Login() {
             <Button type="submit" className="w-full" disabled={isLoggingIn}>
               {isLoggingIn ? "Prihlasovanie..." : "Prihlásiť sa"}
             </Button>
-            <div className="relative w-full">
-              <div className="absolute inset-0 flex items-center">
-                <span className="w-full border-t border-slate-200" />
-              </div>
-              <div className="relative flex justify-center text-xs uppercase">
-                <span className="bg-white px-2 text-slate-500">
-                  Ostatné možnosti (Zatiaľ len Mockup)
-                </span>
-              </div>
-            </div>
-            <div className="grid grid-cols-2 gap-4 w-full">
-              <Button type="button" variant="outline" onClick={() => alert('Will redirect to Github OAuth!')}>GitHub</Button>
-              <Button type="button" variant="outline" onClick={() => alert('Will redirect to Google OAuth!')}>Google</Button>
-            </div>
+            <p className="text-xs text-slate-500">
+              Nemáte účet? <Link to="/register" className="underline">Zaregistrujte sa</Link>
+            </p>
           </CardFooter>
         </Card>
       </form>
