@@ -3,3 +3,7 @@ node_modules/
 .tmp/
 dist/
 coverage/
+
+# IDE
+.idea/
+.DS_Store
