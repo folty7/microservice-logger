@@ -8,8 +8,7 @@
     "@sailshq/lodash": "^3.10.6",
     "axios": "^1.20.0",
     "sails": "^1.5.17",
-    "sails-hook-orm": "^4.0.3",
-    "sails-hook-sockets": "^3.0.0"
+    "sails-hook-orm": "^4.0.3"
   },
   "devDependencies": {
     "eslint": "5.16.0"
@@ -17,9 +16,8 @@
   "scripts": {
     "dev": "node --watch app.js",
     "start": "NODE_ENV=production node app.js",
-    "test": "npm run lint && npm run custom-tests && echo 'Done.'",
-    "lint": "./node_modules/eslint/bin/eslint.js . --max-warnings=0 --report-unused-disable-directives && echo '✔  Your .js files look good.'",
-    "custom-tests": "echo \"(No other custom tests yet.)\" && echo"
+    "test": "npm run lint && node --test 'test/**/*.test.js' && echo 'Done.'",
+    "lint": "./node_modules/eslint/bin/eslint.js . --max-warnings=0 --report-unused-disable-directives && echo '✔  Your .js files look good.'"
   },
   "main": "app.js",
   "repository": {
@@ -29,6 +27,6 @@
   "author": "andrejfolta",
   "license": "",
   "engines": {
-    "node": "^25.8"
+    "node": ">=22"
   }
 }
