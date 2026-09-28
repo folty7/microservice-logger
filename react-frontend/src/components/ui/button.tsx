@@ -62,4 +62,6 @@ function Button({
   )
 }
 
+// buttonVariants is a style helper, not a component; the rule only matters for fast refresh
+// eslint-disable-next-line react-refresh/only-export-components
 export { Button, buttonVariants }
