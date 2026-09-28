@@ -19,7 +19,7 @@ module.exports.routes = {
   *                                                                          *
   ***************************************************************************/
 
-  '/': { view: 'pages/homepage' },
+  '/': 'api/index-action',
 
 
   /***************************************************************************
@@ -33,7 +33,11 @@ module.exports.routes = {
   *                                                                          *
   ***************************************************************************/
 
+  // Both prefixes: the browser reaches the gateway through the Vite proxy, which strips /api
+  'GET /health': 'api/health',
   'GET /api/health': 'api/health',
+  'GET /ready': 'api/ready',
+  'GET /api/ready': 'api/ready',
 
   'POST /logs': 'logs/create',
   'GET /logs': 'logs/find',

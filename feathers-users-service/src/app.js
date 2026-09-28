@@ -20,6 +20,19 @@ import { services } from './services/index.js'
 import { channels } from './channels.js'
 import { seedAdmin } from './seed-admin.js'
 
+
+// Liveness: the process is up. Readiness: the database answers, so the service can serve traffic.
+const registerHealthRoutes = app => {
+  app.use('/health', (req, res) => res.json({ status: 'ok' }))
+  app.use('/ready', (req, res) => {
+    app
+      .get('mongodbClient')
+      .then(db => db.command({ ping: 1 }))
+      .then(() => res.json({ status: 'ready' }))
+      .catch(error => res.status(503).json({ status: 'unavailable', reason: error.message }))
+  })
+}
+
 const app = express(feathers())
 
 // Load app configuration
@@ -45,6 +58,8 @@ app.configure(authentication)
 
 app.configure(services)
 app.configure(channels)
+
+registerHealthRoutes(app)
 
 // Configure a middleware for 404s and the error handler
 app.use(notFound())
