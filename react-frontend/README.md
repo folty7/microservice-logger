@@ -9,7 +9,8 @@ Browser client for the logging platform. It provides a login screen, stores the 
 - Keep authentication state synchronized across browser tabs.
 - Protect dashboard routes with React Router.
 - Fetch logs from `/api/logs`.
-- Refresh dashboard log data every 10 seconds.
+- Refresh dashboard log data every 10 seconds while the tab is visible.
+- Filter logs by type and severity and page through them.
 - Clear local auth state on `401` responses.
 
 ## Stack
@@ -51,6 +52,7 @@ src/
 | Route | Component | Access |
 | --- | --- | --- |
 | `/login` | `Login` | Public; redirects to `/` when authenticated |
+| `/register` | `Register` | Public; creates an account and signs in |
 | `/` | `Dashboard` | Requires JWT |
 | `*` | Redirect | Redirects to `/` |
 
@@ -111,10 +113,11 @@ npm run preview
 
 ## Docker
 
-The frontend is built from `node:22-alpine` and runs the Vite dev server on port `5173`. Docker Compose mounts the source directory into `/app` and keeps container `node_modules` isolated with an anonymous volume.
+The Dockerfile has two targets. `dev` (used by `docker-compose.yaml`) runs the Vite dev server on port `5173`, with the source bind-mounted and `node_modules` kept in an anonymous volume. `prod` (used by `docker-compose.prod.yaml`) builds the static bundle and serves it with nginx on port `80`, proxying `/api` to the gateway.
 
 ## Notes
 
 - Auth state is intentionally lightweight and kept in React context.
 - Server state is fetched directly with `fetch`; no client-side data cache library is configured.
-- OAuth buttons in the login page are placeholders and do not currently start an OAuth redirect.
+- The dashboard filters by type and severity, pages through results server-side, and pauses its 10-second refresh while the browser tab is hidden.
+- Registration creates a regular user; only an admin (seeded from `ADMIN_EMAIL`) sees every log.

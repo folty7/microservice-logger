@@ -25,7 +25,8 @@ Routes are defined in `config/routes.js`.
 
 | Method | Path | Controller | Target |
 | --- | --- | --- | --- |
-| `GET` | `/api/health` | `api/health` | Gateway health check |
+| `GET` | `/health`, `/api/health` | `api/health` | Liveness of the gateway |
+| `GET` | `/ready`, `/api/ready` | `api/ready` | Readiness: checks both Feathers services |
 | `POST` | `/auth` | `auth/create` | Users Feathers service |
 | `POST` | `/users` | `users/create` | Users Feathers service |
 | `GET` | `/logs` | `logs/find` | Logs Feathers service |
@@ -101,16 +102,20 @@ npm run lint
 
 ## Docker
 
-The service is built from `node:22-alpine`, installs dependencies with `npm ci`, and starts with `npm start` by default. In Docker Compose development mode it runs:
+The image is built from `node:22-slim`. Dependencies are installed first (`npm ci --omit=dev`) so that layer stays cached, the service runs as the non-root `node` user, and the exec-form `CMD` lets it receive `SIGTERM`. In Docker Compose development mode it runs `npm run dev` and Compose exposes the gateway on host port `8080`; in `docker-compose.prod.yaml` it is reachable only through the frontend's nginx.
+
+## Testing
 
 ```bash
-npm run dev
+npm test
 ```
 
-Compose exposes the gateway on host port `8080`.
+Runs ESLint plus `node --test`: body redaction, the rate limiter (including that successful logins are not counted) and the proxy's status mapping (relayed upstream errors, `502`, `504`).
 
 ## Notes
 
 - The gateway does not persist data directly.
+- Every request gets an `X-Request-Id` (kept if the caller sent one). It is returned to the client, forwarded to the services, and appears in their error logs.
+- The websockets, Grunt and views hooks are disabled: this is a JSON API with no assets, no sessions and no realtime clients.
 - Authentication is delegated to the users service.
 - Log authorization (ownership and roles) is enforced by the logs service using the JWT payload.
